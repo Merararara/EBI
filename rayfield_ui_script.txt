@@ -1,0 +1,1095 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Game UI - Complete",
+   LoadingTitle = "Loading UI...",
+   LoadingSubtitle = "by Your Name",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "GameConfig"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false,
+   KeySettings = {
+      Title = "Key System",
+      Subtitle = "Key System",
+      Note = "No key needed",
+      FileName = "Key",
+      SaveKey = false,
+      GrabKeyFromSite = false,
+      Key = {""}
+   }
+})
+
+-- ==================== Player Tab ====================
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local PlayerSection = PlayerTab:CreateSection("Player Settings")
+
+local WalkSpeedSlider = PlayerTab:CreateSlider({
+   Name = "Walk Speed",
+   Range = {16, 200},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "WalkSpeedSlider",
+   Callback = function(Value)
+      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+   end,
+})
+
+local JumpPowerSlider = PlayerTab:CreateSlider({
+   Name = "Jump Power",
+   Range = {50, 300},
+   Increment = 1,
+   Suffix = "Power",
+   CurrentValue = 50,
+   Flag = "JumpPowerSlider",
+   Callback = function(Value)
+      game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+   end,
+})
+
+local InfiniteJumpToggle = PlayerTab:CreateToggle({
+   Name = "Infinite Jump",
+   CurrentValue = false,
+   Flag = "InfiniteJump",
+   Callback = function(Value)
+      getgenv().InfiniteJump = Value
+      if Value then
+         game:GetService("UserInputService").JumpRequest:connect(function()
+            if getgenv().InfiniteJump then
+               game.Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid'):ChangeState("Jumping")
+            end
+         end)
+      end
+   end,
+})
+
+local NoClipToggle = PlayerTab:CreateToggle({
+   Name = "NoClip",
+   CurrentValue = false,
+   Flag = "NoClip",
+   Callback = function(Value)
+      getgenv().NoClip = Value
+      game:GetService('RunService').Stepped:connect(function()
+         if getgenv().NoClip then
+            for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+               if v:IsA("BasePart") then
+                  v.CanCollide = false
+               end
+            end
+         end
+      end)
+   end,
+})
+
+-- ==================== TP Tab ====================
+local TpTab = Window:CreateTab("Tp", 4483362458)
+local TpSection = TpTab:CreateSection("Teleport")
+
+-- Get player list function
+local function getPlayerList()
+   local players = {}
+   for _, player in pairs(game.Players:GetPlayers()) do
+      if player ~= game.Players.LocalPlayer then
+         table.insert(players, player.Name)
+      end
+   end
+   return players
+end
+
+local PlayerDropdown = TpTab:CreateDropdown({
+   Name = "Select Player",
+   Options = getPlayerList(),
+   CurrentOption = {"None"},
+   MultipleOptions = false,
+   Flag = "PlayerDropdown",
+   Callback = function(Option)
+      getgenv().SelectedPlayer = Option[1]
+   end,
+})
+
+-- Update player list every 3 seconds
+task.spawn(function()
+   while wait(3) do
+      local players = getPlayerList()
+      if #players > 0 then
+         PlayerDropdown:Refresh(players)
+      end
+   end
+end)
+
+local TpToPlayerButton = TpTab:CreateButton({
+   Name = "TP to Selected Player",
+   Callback = function()
+      if getgenv().SelectedPlayer and getgenv().SelectedPlayer ~= "None" then
+         local targetPlayer = game.Players:FindFirstChild(getgenv().SelectedPlayer)
+         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+         end
+      end
+   end,
+})
+
+local TpInput = TpTab:CreateInput({
+   Name = "Enter Coordinates (X, Y, Z)",
+   PlaceholderText = "Example: 100, 50, 200",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      getgenv().TpCoords = Text
+   end,
+})
+
+local TpToCoordButton = TpTab:CreateButton({
+   Name = "TP to Coordinates",
+   Callback = function()
+      if getgenv().TpCoords then
+         local coords = string.split(getgenv().TpCoords, ",")
+         if #coords == 3 then
+            local x = tonumber(coords[1])
+            local y = tonumber(coords[2])
+            local z = tonumber(coords[3])
+            if x and y and z then
+               game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+            end
+         end
+      end
+   end,
+})
+
+-- ==================== ESP Tab ====================
+local EspTab = Window:CreateTab("ESP", 4483362458)
+local EspSection = EspTab:CreateSection("ESP Settings")
+
+-- Store ESP connections
+getgenv().ESPConnections = {}
+
+local function createESP(player)
+   pcall(function()
+      if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+         -- Remove existing ESP first
+         local oldHighlight = player.Character:FindFirstChild("ESP_Highlight")
+         if oldHighlight then
+            oldHighlight:Destroy()
+         end
+         
+         local highlight = Instance.new("Highlight")
+         highlight.Parent = player.Character
+         highlight.FillTransparency = 0.5
+         highlight.OutlineTransparency = 0
+         highlight.FillColor = Color3.fromRGB(255, 0, 0)
+         highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+         highlight.Name = "ESP_Highlight"
+      end
+   end)
+end
+
+local function removeESP(player)
+   pcall(function()
+      if player.Character then
+         local highlight = player.Character:FindFirstChild("ESP_Highlight")
+         if highlight then
+            highlight:Destroy()
+         end
+      end
+   end)
+end
+
+local function removeAllESP()
+   for _, player in pairs(game.Players:GetPlayers()) do
+      removeESP(player)
+   end
+   
+   -- Disconnect all connections
+   for _, connection in pairs(getgenv().ESPConnections) do
+      connection:Disconnect()
+   end
+   getgenv().ESPConnections = {}
+end
+
+local PlayerESPToggle = EspTab:CreateToggle({
+   Name = "Player ESP",
+   CurrentValue = false,
+   Flag = "PlayerESP",
+   Callback = function(Value)
+      getgenv().PlayerESP = Value
+      
+      if Value then
+         -- Add ESP to existing players
+         for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer then
+               createESP(player)
+               
+               -- Handle character respawn
+               local charAddedConn = player.CharacterAdded:Connect(function()
+                  if getgenv().PlayerESP then
+                     wait(0.5)
+                     createESP(player)
+                  end
+               end)
+               table.insert(getgenv().ESPConnections, charAddedConn)
+            end
+         end
+         
+         -- Handle new players joining
+         local playerAddedConn = game.Players.PlayerAdded:Connect(function(player)
+            if getgenv().PlayerESP then
+               player.CharacterAdded:Connect(function()
+                  wait(0.5)
+                  createESP(player)
+               end)
+            end
+         end)
+         table.insert(getgenv().ESPConnections, playerAddedConn)
+      else
+         removeAllESP()
+      end
+   end,
+})
+
+local ESPColorPicker = EspTab:CreateColorPicker({
+   Name = "ESP Color",
+   Color = Color3.fromRGB(255, 0, 0),
+   Flag = "ESPColor",
+   Callback = function(Value)
+      for _, player in pairs(game.Players:GetPlayers()) do
+         if player ~= game.Players.LocalPlayer and player.Character then
+            local highlight = player.Character:FindFirstChild("ESP_Highlight")
+            if highlight then
+               highlight.FillColor = Value
+            end
+         end
+      end
+   end
+})
+
+local ESPTransparencySlider = EspTab:CreateSlider({
+   Name = "ESP Transparency",
+   Range = {0, 1},
+   Increment = 0.1,
+   Suffix = "",
+   CurrentValue = 0.5,
+   Flag = "ESPTransparency",
+   Callback = function(Value)
+      for _, player in pairs(game.Players:GetPlayers()) do
+         if player ~= game.Players.LocalPlayer and player.Character then
+            local highlight = player.Character:FindFirstChild("ESP_Highlight")
+            if highlight then
+               highlight.FillTransparency = Value
+            end
+         end
+      end
+   end,
+})
+
+local NameESPToggle = EspTab:CreateToggle({
+   Name = "Name ESP",
+   CurrentValue = false,
+   Flag = "NameESP",
+   Callback = function(Value)
+      getgenv().NameESP = Value
+      
+      if Value then
+         for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+               local BillboardGui = Instance.new("BillboardGui")
+               BillboardGui.Name = "NameESP"
+               BillboardGui.Parent = player.Character.Head
+               BillboardGui.Size = UDim2.new(0, 100, 0, 30)
+               BillboardGui.StudsOffset = Vector3.new(0, 2, 0)
+               BillboardGui.AlwaysOnTop = true
+               
+               local TextLabel = Instance.new("TextLabel")
+               TextLabel.Parent = BillboardGui
+               TextLabel.BackgroundTransparency = 1
+               TextLabel.Size = UDim2.new(1, 0, 1, 0)
+               TextLabel.Text = player.Name
+               TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+               TextLabel.TextSize = 14
+               TextLabel.Font = Enum.Font.GothamBold
+               TextLabel.TextStrokeTransparency = 0.5
+            end
+         end
+      else
+         for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Head") then
+               local nameESP = player.Character.Head:FindFirstChild("NameESP")
+               if nameESP then
+                  nameESP:Destroy()
+               end
+            end
+         end
+      end
+   end,
+})
+
+-- ==================== Fling Tab ====================
+local FlingTab = Window:CreateTab("Fling", 4483362458)
+local FlingSection = FlingTab:CreateSection("Fling Settings")
+
+-- Fling Power Setting
+local FlingPower = 500
+
+local FlingPowerSlider = FlingTab:CreateSlider({
+   Name = "Fling Power",
+   Range = {100, 2000},
+   Increment = 50,
+   Suffix = "Power",
+   CurrentValue = 500,
+   Flag = "FlingPower",
+   Callback = function(Value)
+      FlingPower = Value
+   end,
+})
+
+-- Walk Fling Toggle
+local WalkFlingToggle = FlingTab:CreateToggle({
+   Name = "Walk Fling",
+   CurrentValue = false,
+   Flag = "WalkFling",
+   Callback = function(Value)
+      getgenv().WalkFling = Value
+      
+      if Value then
+         local Char = game.Players.LocalPlayer.Character
+         local HRP = Char:FindFirstChild("HumanoidRootPart")
+         
+         if HRP then
+            local BV = Instance.new("BodyVelocity")
+            BV.Name = "FlingVelocity"
+            BV.MaxForce = Vector3.new(100000, 0, 100000)
+            BV.Velocity = Vector3.new(0, 0, 0)
+            BV.Parent = HRP
+            
+            game:GetService("RunService").Heartbeat:Connect(function()
+               if getgenv().WalkFling and Char and HRP then
+                  if Char.Humanoid.MoveDirection.Magnitude > 0 then
+                     BV.Velocity = Char.Humanoid.MoveDirection * FlingPower
+                  else
+                     BV.Velocity = Vector3.new(0, 0, 0)
+                  end
+               elseif BV then
+                  BV:Destroy()
+               end
+            end)
+         end
+      else
+         local HRP = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+         if HRP then
+            local BV = HRP:FindFirstChild("FlingVelocity")
+            if BV then
+               BV:Destroy()
+            end
+         end
+      end
+   end,
+})
+
+-- Target Player Fling
+local FlingTargetDropdown = FlingTab:CreateDropdown({
+   Name = "Select Target",
+   Options = getPlayerList(),
+   CurrentOption = {"None"},
+   MultipleOptions = false,
+   Flag = "FlingTarget",
+   Callback = function(Option)
+      getgenv().FlingTarget = Option[1]
+   end,
+})
+
+task.spawn(function()
+   while wait(3) do
+      local players = getPlayerList()
+      if #players > 0 then
+         FlingTargetDropdown:Refresh(players)
+      end
+   end
+end)
+
+local FlingTargetButton = FlingTab:CreateButton({
+   Name = "Fling Selected Player",
+   Callback = function()
+      if getgenv().FlingTarget and getgenv().FlingTarget ~= "None" then
+         local targetPlayer = game.Players:FindFirstChild(getgenv().FlingTarget)
+         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local Char = game.Players.LocalPlayer.Character
+            local HRP = Char:FindFirstChild("HumanoidRootPart")
+            local TargetHRP = targetPlayer.Character.HumanoidRootPart
+            
+            -- Save original position
+            local OriginalPos = HRP.CFrame
+            
+            -- Disable character collision
+            for _, v in pairs(Char:GetDescendants()) do
+               if v:IsA("BasePart") then
+                  v.CanCollide = false
+               end
+            end
+            
+            -- Create fling effect
+            local BV = Instance.new("BodyVelocity")
+            BV.MaxForce = Vector3.new(100000, 100000, 100000)
+            BV.Velocity = Vector3.new(0, 0, 0)
+            BV.Parent = HRP
+            
+            -- Fling loop
+            for i = 1, 10 do
+               HRP.CFrame = TargetHRP.CFrame
+               BV.Velocity = Vector3.new(math.random(-FlingPower, FlingPower), FlingPower, math.random(-FlingPower, FlingPower))
+               wait(0.1)
+            end
+            
+            -- Cleanup
+            BV:Destroy()
+            HRP.CFrame = OriginalPos
+            
+            -- Re-enable collision
+            for _, v in pairs(Char:GetDescendants()) do
+               if v:IsA("BasePart") then
+                  v.CanCollide = true
+               end
+            end
+         end
+      end
+   end,
+})
+
+-- All Fling
+local AllFlingButton = FlingTab:CreateButton({
+   Name = "Fling All Players",
+   Callback = function()
+      local Char = game.Players.LocalPlayer.Character
+      local HRP = Char:FindFirstChild("HumanoidRootPart")
+      local OriginalPos = HRP.CFrame
+      
+      -- Disable collision
+      for _, v in pairs(Char:GetDescendants()) do
+         if v:IsA("BasePart") then
+            v.CanCollide = false
+         end
+      end
+      
+      local BV = Instance.new("BodyVelocity")
+      BV.MaxForce = Vector3.new(100000, 100000, 100000)
+      BV.Parent = HRP
+      
+      -- Fling all players
+      for _, player in pairs(game.Players:GetPlayers()) do
+         if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            for i = 1, 5 do
+               HRP.CFrame = player.Character.HumanoidRootPart.CFrame
+               BV.Velocity = Vector3.new(math.random(-FlingPower, FlingPower), FlingPower, math.random(-FlingPower, FlingPower))
+               wait(0.05)
+            end
+         end
+      end
+      
+      -- Cleanup
+      BV:Destroy()
+      HRP.CFrame = OriginalPos
+      
+      for _, v in pairs(Char:GetDescendants()) do
+         if v:IsA("BasePart") then
+            v.CanCollide = true
+         end
+      end
+   end,
+})
+
+-- Anti Fling
+local AntiFlingToggle = FlingTab:CreateToggle({
+   Name = "Anti Fling",
+   CurrentValue = false,
+   Flag = "AntiFling",
+   Callback = function(Value)
+      getgenv().AntiFling = Value
+      
+      if Value then
+         local Char = game.Players.LocalPlayer.Character
+         
+         for _, v in pairs(Char:GetDescendants()) do
+            if v:IsA("BasePart") then
+               local BA = Instance.new("BodyAngularVelocity")
+               BA.Name = "AntiFling"
+               BA.MaxTorque = Vector3.new(100000, 100000, 100000)
+               BA.AngularVelocity = Vector3.new(0, 0, 0)
+               BA.Parent = v
+               
+               local BV = Instance.new("BodyVelocity")
+               BV.Name = "AntiFling"
+               BV.MaxForce = Vector3.new(100000, 100000, 100000)
+               BV.Velocity = Vector3.new(0, 0, 0)
+               BV.Parent = v
+            end
+         end
+         
+         game:GetService("RunService").Heartbeat:Connect(function()
+            if getgenv().AntiFling then
+               for _, v in pairs(Char:GetDescendants()) do
+                  if v:IsA("BasePart") then
+                     v.Velocity = Vector3.new(0, 0, 0)
+                     v.RotVelocity = Vector3.new(0, 0, 0)
+                  end
+               end
+            end
+         end)
+      else
+         local Char = game.Players.LocalPlayer.Character
+         
+         for _, v in pairs(Char:GetDescendants()) do
+            if v:IsA("BasePart") then
+               local BA = v:FindFirstChild("AntiFling")
+               if BA and BA:IsA("BodyAngularVelocity") then
+                  BA:Destroy()
+               end
+               local BV = v:FindFirstChild("AntiFling")
+               if BV and BA:IsA("BodyVelocity") then
+                  BV:Destroy()
+               end
+            end
+         end
+      end
+   end,
+})
+
+-- ==================== RTX Tab ====================
+local RTXTab = Window:CreateTab("RTX", 4483362458)
+local RTXSection = RTXTab:CreateSection("Graphics Settings")
+
+-- RTX Toggle (Enhanced Lighting)
+local RTXToggle = RTXTab:CreateToggle({
+   Name = "RTX Mode",
+   CurrentValue = false,
+   Flag = "RTX",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         -- Save original settings
+         getgenv().OriginalLighting = {
+            Ambient = Lighting.Ambient,
+            Brightness = Lighting.Brightness,
+            ColorShift_Bottom = Lighting.ColorShift_Bottom,
+            ColorShift_Top = Lighting.ColorShift_Top,
+            OutdoorAmbient = Lighting.OutdoorAmbient,
+            ExposureCompensation = Lighting.ExposureCompensation
+         }
+         
+         -- Apply RTX settings
+         Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+         Lighting.Brightness = 2.5
+         Lighting.ColorShift_Bottom = Color3.fromRGB(11, 0, 20)
+         Lighting.ColorShift_Top = Color3.fromRGB(240, 127, 66)
+         Lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
+         Lighting.ExposureCompensation = 0.2
+         
+         -- Add effects
+         if not Lighting:FindFirstChild("BloomEffect") then
+            local Bloom = Instance.new("BloomEffect")
+            Bloom.Name = "RTX_Bloom"
+            Bloom.Intensity = 0.5
+            Bloom.Size = 24
+            Bloom.Threshold = 0.8
+            Bloom.Parent = Lighting
+         end
+         
+         if not Lighting:FindFirstChild("SunRaysEffect") then
+            local SunRays = Instance.new("SunRaysEffect")
+            SunRays.Name = "RTX_SunRays"
+            SunRays.Intensity = 0.15
+            SunRays.Spread = 0.4
+            SunRays.Parent = Lighting
+         end
+         
+         if not Lighting:FindFirstChild("ColorCorrectionEffect") then
+            local ColorCorrection = Instance.new("ColorCorrectionEffect")
+            ColorCorrection.Name = "RTX_ColorCorrection"
+            ColorCorrection.Brightness = 0.05
+            ColorCorrection.Contrast = 0.2
+            ColorCorrection.Saturation = 0.3
+            ColorCorrection.TintColor = Color3.fromRGB(255, 255, 255)
+            ColorCorrection.Parent = Lighting
+         end
+         
+         if not Lighting:FindFirstChild("DepthOfFieldEffect") then
+            local DepthOfField = Instance.new("DepthOfFieldEffect")
+            DepthOfField.Name = "RTX_DepthOfField"
+            DepthOfField.FarIntensity = 0.1
+            DepthOfField.FocusDistance = 0.05
+            DepthOfField.InFocusRadius = 20
+            DepthOfField.NearIntensity = 0.5
+            DepthOfField.Parent = Lighting
+         end
+      else
+         -- Restore original settings
+         if getgenv().OriginalLighting then
+            Lighting.Ambient = getgenv().OriginalLighting.Ambient
+            Lighting.Brightness = getgenv().OriginalLighting.Brightness
+            Lighting.ColorShift_Bottom = getgenv().OriginalLighting.ColorShift_Bottom
+            Lighting.ColorShift_Top = getgenv().OriginalLighting.ColorShift_Top
+            Lighting.OutdoorAmbient = getgenv().OriginalLighting.OutdoorAmbient
+            Lighting.ExposureCompensation = getgenv().OriginalLighting.ExposureCompensation
+         end
+         
+         -- Remove effects
+         for _, effect in pairs(Lighting:GetChildren()) do
+            if effect.Name:match("RTX_") then
+               effect:Destroy()
+            end
+         end
+      end
+   end,
+})
+
+-- Bloom Effect
+local BloomToggle = RTXTab:CreateToggle({
+   Name = "Bloom Effect",
+   CurrentValue = false,
+   Flag = "Bloom",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         local Bloom = Instance.new("BloomEffect")
+         Bloom.Name = "CustomBloom"
+         Bloom.Intensity = 0.4
+         Bloom.Size = 24
+         Bloom.Threshold = 0.8
+         Bloom.Parent = Lighting
+      else
+         local bloom = Lighting:FindFirstChild("CustomBloom")
+         if bloom then
+            bloom:Destroy()
+         end
+      end
+   end,
+})
+
+local BloomIntensitySlider = RTXTab:CreateSlider({
+   Name = "Bloom Intensity",
+   Range = {0, 1},
+   Increment = 0.1,
+   Suffix = "",
+   CurrentValue = 0.4,
+   Flag = "BloomIntensity",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      local bloom = Lighting:FindFirstChild("CustomBloom") or Lighting:FindFirstChild("RTX_Bloom")
+      if bloom then
+         bloom.Intensity = Value
+      end
+   end,
+})
+
+-- Sun Rays Effect
+local SunRaysToggle = RTXTab:CreateToggle({
+   Name = "Sun Rays",
+   CurrentValue = false,
+   Flag = "SunRays",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         local SunRays = Instance.new("SunRaysEffect")
+         SunRays.Name = "CustomSunRays"
+         SunRays.Intensity = 0.15
+         SunRays.Spread = 0.4
+         SunRays.Parent = Lighting
+      else
+         local sunRays = Lighting:FindFirstChild("CustomSunRays")
+         if sunRays then
+            sunRays:Destroy()
+         end
+      end
+   end,
+})
+
+-- Color Correction
+local ColorCorrectionToggle = RTXTab:CreateToggle({
+   Name = "Color Correction",
+   CurrentValue = false,
+   Flag = "ColorCorrection",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         local ColorCorrection = Instance.new("ColorCorrectionEffect")
+         ColorCorrection.Name = "CustomColorCorrection"
+         ColorCorrection.Brightness = 0.05
+         ColorCorrection.Contrast = 0.2
+         ColorCorrection.Saturation = 0.3
+         ColorCorrection.Parent = Lighting
+      else
+         local cc = Lighting:FindFirstChild("CustomColorCorrection")
+         if cc then
+            cc:Destroy()
+         end
+      end
+   end,
+})
+
+local SaturationSlider = RTXTab:CreateSlider({
+   Name = "Saturation",
+   Range = {-1, 1},
+   Increment = 0.1,
+   Suffix = "",
+   CurrentValue = 0,
+   Flag = "Saturation",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      local cc = Lighting:FindFirstChild("CustomColorCorrection") or Lighting:FindFirstChild("RTX_ColorCorrection")
+      if cc then
+         cc.Saturation = Value
+      end
+   end,
+})
+
+-- Atmosphere Effect
+local AtmosphereToggle = RTXTab:CreateToggle({
+   Name = "Atmosphere",
+   CurrentValue = false,
+   Flag = "Atmosphere",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         local Atmosphere = Instance.new("Atmosphere")
+         Atmosphere.Name = "CustomAtmosphere"
+         Atmosphere.Density = 0.3
+         Atmosphere.Offset = 0.25
+         Atmosphere.Color = Color3.fromRGB(199, 199, 199)
+         Atmosphere.Decay = Color3.fromRGB(106, 112, 125)
+         Atmosphere.Glare = 0.4
+         Atmosphere.Haze = 0.4
+         Atmosphere.Parent = Lighting
+      else
+         local atmos = Lighting:FindFirstChild("CustomAtmosphere")
+         if atmos then
+            atmos:Destroy()
+         end
+      end
+   end,
+})
+
+-- Remove Shadows
+local NoShadowsToggle = RTXTab:CreateToggle({
+   Name = "Remove Shadows",
+   CurrentValue = false,
+   Flag = "NoShadows",
+   Callback = function(Value)
+      if Value then
+         getgenv().OriginalShadows = game:GetService("Lighting").GlobalShadows
+         game:GetService("Lighting").GlobalShadows = false
+      else
+         if getgenv().OriginalShadows ~= nil then
+            game:GetService("Lighting").GlobalShadows = getgenv().OriginalShadows
+         end
+      end
+   end,
+})
+
+-- Performance Mode
+local PerformanceModeToggle = RTXTab:CreateToggle({
+   Name = "Performance Mode",
+   CurrentValue = false,
+   Flag = "PerformanceMode",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         -- Remove all effects for better performance
+         for _, effect in pairs(Lighting:GetChildren()) do
+            if effect:IsA("PostEffect") or effect:IsA("Atmosphere") then
+               effect.Enabled = false
+            end
+         end
+         
+         -- Lower graphics settings
+         settings().Rendering.QualityLevel = "Level01"
+      else
+         -- Re-enable effects
+         for _, effect in pairs(Lighting:GetChildren()) do
+            if effect:IsA("PostEffect") or effect:IsA("Atmosphere") then
+               effect.Enabled = true
+            end
+         end
+         
+         -- Restore graphics
+         settings().Rendering.QualityLevel = "Automatic"
+      end
+   end,
+})
+
+-- Reset Graphics
+local ResetGraphicsButton = RTXTab:CreateButton({
+   Name = "Reset All Graphics",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      
+      -- Remove all custom effects
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Custom") or effect.Name:match("RTX_") then
+            effect:Destroy()
+         end
+      end
+      
+      -- Reset to defaults
+      Lighting.Ambient = Color3.fromRGB(138, 138, 138)
+      Lighting.Brightness = 2
+      Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+      Lighting.ColorShift_Top = Color3.fromRGB(0, 0, 0)
+      Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
+      Lighting.GlobalShadows = true
+      
+      settings().Rendering.QualityLevel = "Automatic"
+   end,
+})
+
+-- ==================== FE Universal Tab ====================
+local FETab = Window:CreateTab("FE Universal", 4483362458)
+local FESection = FETab:CreateSection("FE Scripts")
+
+local ShiftLockButton = FETab:CreateButton({
+   Name = "Shift Lock",
+   Callback = function()
+      loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Shift-lock-64302"))()
+   end,
+})
+
+local FlyV3Button = FETab:CreateButton({
+   Name = "Fly V3",
+   Callback = function()
+      loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
+   end,
+})
+
+local HugToolButton = FETab:CreateButton({
+   Name = "Hug Tool",
+   Callback = function()
+      loadstring(game:HttpGet("https://raw.githubusercontent.com/ExploitFin/Animations/refs/heads/main/Front%20and%20Back%20Hug%20Tool"))()
+   end,
+})
+
+local FEAnimationButton = FETab:CreateButton({
+   Name = "FE Animation",
+   Callback = function()
+      loadstring(game:HttpGet(('https://pastebin.com/raw/1p6xnBNf'), true))()
+   end,
+})
+
+local AimbotButton = FETab:CreateButton({
+   Name = "Aimbot",
+   Callback = function()
+      loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Aimbot-Mobile-34677"))()
+   end,
+})
+
+local PortalButton = FETab:CreateButton({
+   Name = "Portal",
+   Callback = function()
+      loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/refs/heads/main/Portal'))()
+   end,
+})
+
+-- ==================== Misc Tab ====================
+local MiscTab = Window:CreateTab("Misc", 4483362458)
+local MiscSection = MiscTab:CreateSection("Other Settings")
+
+local ThemeDropdown = MiscTab:CreateDropdown({
+   Name = "UI Theme",
+   Options = {"Default", "Amber", "Amethyst", "Bloom", "DarkBlue", "Green", "Light", "Ocean", "Oceanic"},
+   CurrentOption = {"Default"},
+   MultipleOptions = false,
+   Flag = "ThemeDropdown",
+   Callback = function(Option)
+      Rayfield:SetTheme(Option[1])
+   end,
+})
+
+local ColorPicker = MiscTab:CreateColorPicker({
+   Name = "Accent Color",
+   Color = Color3.fromRGB(255, 255, 255),
+   Flag = "ColorPicker",
+   Callback = function(Value)
+      -- Apply custom accent color to UI elements
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.BackgroundColor3 ~= Color3.fromRGB(30, 30, 30) then
+               obj.BackgroundColor3 = Value
+            end
+         end
+      end
+   end
+})
+
+local FPSCounter = MiscTab:CreateLabel("FPS: 0")
+
+task.spawn(function()
+   local lastTime = tick()
+   local frameCount = 0
+   
+   game:GetService("RunService").RenderStepped:Connect(function()
+      frameCount = frameCount + 1
+      local currentTime = tick()
+      
+      if currentTime - lastTime >= 1 then
+         local fps = math.floor(frameCount / (currentTime - lastTime))
+         FPSCounter:Set("FPS: " .. fps)
+         frameCount = 0
+         lastTime = currentTime
+      end
+   end)
+end)
+
+local PingLabel = MiscTab:CreateLabel("Ping: 0ms")
+
+task.spawn(function()
+   while wait(2) do
+      local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+      PingLabel:Set("Ping: " .. ping)
+   end
+end)
+
+local FullbrightToggle = MiscTab:CreateToggle({
+   Name = "Fullbright",
+   CurrentValue = false,
+   Flag = "Fullbright",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         getgenv().OldAmbient = Lighting.Ambient
+         getgenv().OldBrightness = Lighting.Brightness
+         getgenv().OldOutdoorAmbient = Lighting.OutdoorAmbient
+         
+         Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+         Lighting.Brightness = 2
+         Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+      else
+         if getgenv().OldAmbient then
+            Lighting.Ambient = getgenv().OldAmbient
+            Lighting.Brightness = getgenv().OldBrightness
+            Lighting.OutdoorAmbient = getgenv().OldOutdoorAmbient
+         end
+      end
+   end,
+})
+
+local AntiAFKToggle = MiscTab:CreateToggle({
+   Name = "Anti AFK",
+   CurrentValue = false,
+   Flag = "AntiAFK",
+   Callback = function(Value)
+      getgenv().AntiAFK = Value
+      
+      if Value then
+         local VirtualUser = game:GetService("VirtualUser")
+         game:GetService("Players").LocalPlayer.Idled:connect(function()
+            if getgenv().AntiAFK then
+               VirtualUser:CaptureController()
+               VirtualUser:ClickButton2(Vector2.new())
+            end
+         end)
+      end
+   end,
+})
+
+local FOVSlider = MiscTab:CreateSlider({
+   Name = "Field of View",
+   Range = {70, 120},
+   Increment = 1,
+   Suffix = "°",
+   CurrentValue = 70,
+   Flag = "FOVSlider",
+   Callback = function(Value)
+      game.Workspace.CurrentCamera.FieldOfView = Value
+   end,
+})
+
+local ServerSection = MiscTab:CreateSection("Server Settings")
+
+local RejoinButton = MiscTab:CreateButton({
+   Name = "Rejoin",
+   Callback = function()
+      wait(1)
+      game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer)
+   end,
+})
+
+local ServerHopButton = MiscTab:CreateButton({
+   Name = "Server Hop",
+   Callback = function()
+      local TeleportService = game:GetService("TeleportService")
+      local Players = game:GetService("Players")
+      local LocalPlayer = Players.LocalPlayer
+      
+      local servers = {}
+      local req = game:HttpGetAsync("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+      local body = game:GetService("HttpService"):JSONDecode(req)
+      
+      if body and body.data then
+         for i, v in pairs(body.data) do
+            if type(v) == "table" and tonumber(v.playing) and tonumber(v.maxPlayers) and v.id ~= game.JobId then
+               if tonumber(v.playing) < tonumber(v.maxPlayers) then
+                  table.insert(servers, v.id)
+               end
+            end
+         end
+      end
+      
+      if #servers > 0 then
+         local randomServer = servers[math.random(1, #servers)]
+         TeleportService:TeleportToPlaceInstance(game.PlaceId, randomServer, LocalPlayer)
+      end
+   end,
+})
+
+local LowServerButton = MiscTab:CreateButton({
+   Name = "Low Player Server",
+   Callback = function()
+      local TeleportService = game:GetService("TeleportService")
+      local Players = game:GetService("Players")
+      local LocalPlayer = Players.LocalPlayer
+      
+      local servers = {}
+      local req = game:HttpGetAsync("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+      local body = game:GetService("HttpService"):JSONDecode(req)
+      
+      if body and body.data then
+         for i, v in pairs(body.data) do
+            if type(v) == "table" and tonumber(v.playing) and tonumber(v.maxPlayers) and v.id ~= game.JobId then
+               table.insert(servers, {id = v.id, playing = tonumber(v.playing)})
+            end
+         end
+         
+         table.sort(servers, function(a, b)
+            return a.playing < b.playing
+         end)
+         
+         if #servers > 0 then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[1].id, LocalPlayer)
+         end
+      end
+   end,
+})
+
+local ResetButton = MiscTab:CreateButton({
+   Name = "Reset Settings",
+   Callback = function()
+      game.Players.LocalPlayer.Character.Humanoid.Health = 0
+   end,
+})
+
+local DestroyUIButton = MiscTab:CreateButton({
+   Name = "Close UI",
+   Callback = function()
+      Rayfield:Destroy()
+   end,
+})
+
+Rayfield:LoadConfiguration()
