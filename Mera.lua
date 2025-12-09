@@ -4,6 +4,7 @@ local Window = Rayfield:CreateWindow({
    Name = "Merara Hub",
    LoadingTitle = "Loading...",
    LoadingSubtitle = "Merara!!",
+   Theme = "Ocean",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = nil,
