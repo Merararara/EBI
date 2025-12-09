@@ -28,8 +28,8 @@ local Window = Rayfield:CreateWindow({
 
 task.wait(0.5)
 
-local MainColor = Color3.fromRGB(70, 70, 70)
-local BackgroundColor = Color3.fromRGB(30, 30, 30)
+local MainColor = Color3.fromRGB(70, 120, 120)
+local BackgroundColor = Color3.fromRGB(35, 55, 55)
 
 local RayfieldUI = nil
 for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
