@@ -539,74 +539,313 @@ local RealisticShadowsToggle = RTXTab:CreateToggle({
 local TimeSection = RTXTab:CreateSection("Time Presets")
 
 local MorningButton = RTXTab:CreateButton({
-   Name = "Morning",
+   Name = "Morning Shader",
    Callback = function()
       local Lighting = game:GetService("Lighting")
+      
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Time_") then
+            effect:Destroy()
+         end
+      end
+      
       Lighting.ClockTime = 6
       Lighting.Ambient = Color3.fromRGB(170, 170, 170)
       Lighting.OutdoorAmbient = Color3.fromRGB(200, 180, 140)
-      Lighting.Brightness = 2
+      Lighting.Brightness = 2.5
       Lighting.FogEnd = 100000
+      Lighting.GlobalShadows = true
+      Lighting.ShadowSoftness = 0.8
+      
+      local Bloom = Instance.new("BloomEffect")
+      Bloom.Name = "Time_MorningBloom"
+      Bloom.Intensity = 0.4
+      Bloom.Size = 24
+      Bloom.Threshold = 0.9
+      Bloom.Parent = Lighting
+      
+      local SunRays = Instance.new("SunRaysEffect")
+      SunRays.Name = "Time_MorningSunRays"
+      SunRays.Intensity = 0.2
+      SunRays.Spread = 0.3
+      SunRays.Parent = Lighting
+      
+      local ColorCorrection = Instance.new("ColorCorrectionEffect")
+      ColorCorrection.Name = "Time_MorningColor"
+      ColorCorrection.Brightness = 0.1
+      ColorCorrection.Contrast = 0.2
+      ColorCorrection.Saturation = 0.3
+      ColorCorrection.TintColor = Color3.fromRGB(255, 245, 230)
+      ColorCorrection.Parent = Lighting
+      
+      local Atmosphere = Instance.new("Atmosphere")
+      Atmosphere.Name = "Time_MorningAtmosphere"
+      Atmosphere.Density = 0.3
+      Atmosphere.Offset = 0.25
+      Atmosphere.Color = Color3.fromRGB(220, 210, 200)
+      Atmosphere.Decay = Color3.fromRGB(150, 140, 120)
+      Atmosphere.Glare = 0.5
+      Atmosphere.Haze = 0.3
+      Atmosphere.Parent = Lighting
    end,
 })
 
 local NoonButton = RTXTab:CreateButton({
-   Name = "Noon (Day)",
+   Name = "Noon (Day) Shader",
    Callback = function()
       local Lighting = game:GetService("Lighting")
+      
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Time_") then
+            effect:Destroy()
+         end
+      end
+      
       Lighting.ClockTime = 12
       Lighting.Ambient = Color3.fromRGB(200, 200, 200)
       Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
       Lighting.Brightness = 3
       Lighting.FogEnd = 100000
+      Lighting.GlobalShadows = true
+      Lighting.ShadowSoftness = 0.5
+      
+      local Bloom = Instance.new("BloomEffect")
+      Bloom.Name = "Time_NoonBloom"
+      Bloom.Intensity = 0.5
+      Bloom.Size = 28
+      Bloom.Threshold = 0.8
+      Bloom.Parent = Lighting
+      
+      local SunRays = Instance.new("SunRaysEffect")
+      SunRays.Name = "Time_NoonSunRays"
+      SunRays.Intensity = 0.3
+      SunRays.Spread = 0.4
+      SunRays.Parent = Lighting
+      
+      local ColorCorrection = Instance.new("ColorCorrectionEffect")
+      ColorCorrection.Name = "Time_NoonColor"
+      ColorCorrection.Brightness = 0.15
+      ColorCorrection.Contrast = 0.25
+      ColorCorrection.Saturation = 0.4
+      ColorCorrection.TintColor = Color3.fromRGB(255, 255, 250)
+      ColorCorrection.Parent = Lighting
+      
+      local Atmosphere = Instance.new("Atmosphere")
+      Atmosphere.Name = "Time_NoonAtmosphere"
+      Atmosphere.Density = 0.25
+      Atmosphere.Offset = 0.3
+      Atmosphere.Color = Color3.fromRGB(230, 230, 240)
+      Atmosphere.Decay = Color3.fromRGB(180, 180, 200)
+      Atmosphere.Glare = 0.6
+      Atmosphere.Haze = 0.2
+      Atmosphere.Parent = Lighting
    end,
 })
 
 local SunsetButton = RTXTab:CreateButton({
-   Name = "Sunset",
+   Name = "Sunset Shader",
    Callback = function()
       local Lighting = game:GetService("Lighting")
+      
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Time_") then
+            effect:Destroy()
+         end
+      end
+      
       Lighting.ClockTime = 18
       Lighting.Ambient = Color3.fromRGB(150, 100, 80)
       Lighting.OutdoorAmbient = Color3.fromRGB(255, 140, 50)
-      Lighting.Brightness = 1.5
+      Lighting.Brightness = 1.8
       Lighting.FogEnd = 50000
+      Lighting.GlobalShadows = true
+      Lighting.ShadowSoftness = 0.9
+      
+      local Bloom = Instance.new("BloomEffect")
+      Bloom.Name = "Time_SunsetBloom"
+      Bloom.Intensity = 0.7
+      Bloom.Size = 32
+      Bloom.Threshold = 0.6
+      Bloom.Parent = Lighting
+      
+      local SunRays = Instance.new("SunRaysEffect")
+      SunRays.Name = "Time_SunsetSunRays"
+      SunRays.Intensity = 0.4
+      SunRays.Spread = 0.5
+      SunRays.Parent = Lighting
+      
+      local ColorCorrection = Instance.new("ColorCorrectionEffect")
+      ColorCorrection.Name = "Time_SunsetColor"
+      ColorCorrection.Brightness = 0.05
+      ColorCorrection.Contrast = 0.3
+      ColorCorrection.Saturation = 0.6
+      ColorCorrection.TintColor = Color3.fromRGB(255, 180, 120)
+      ColorCorrection.Parent = Lighting
+      
+      local Atmosphere = Instance.new("Atmosphere")
+      Atmosphere.Name = "Time_SunsetAtmosphere"
+      Atmosphere.Density = 0.4
+      Atmosphere.Offset = 0.25
+      Atmosphere.Color = Color3.fromRGB(255, 160, 100)
+      Atmosphere.Decay = Color3.fromRGB(200, 100, 60)
+      Atmosphere.Glare = 0.7
+      Atmosphere.Haze = 0.5
+      Atmosphere.Parent = Lighting
    end,
 })
 
 local NightButton = RTXTab:CreateButton({
-   Name = "Night",
+   Name = "Night Shader",
    Callback = function()
       local Lighting = game:GetService("Lighting")
+      
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Time_") then
+            effect:Destroy()
+         end
+      end
+      
       Lighting.ClockTime = 0
       Lighting.Ambient = Color3.fromRGB(50, 50, 80)
       Lighting.OutdoorAmbient = Color3.fromRGB(30, 30, 60)
-      Lighting.Brightness = 0.5
+      Lighting.Brightness = 0.8
       Lighting.FogEnd = 30000
+      Lighting.GlobalShadows = true
+      Lighting.ShadowSoftness = 1
+      
+      local Bloom = Instance.new("BloomEffect")
+      Bloom.Name = "Time_NightBloom"
+      Bloom.Intensity = 0.8
+      Bloom.Size = 30
+      Bloom.Threshold = 0.5
+      Bloom.Parent = Lighting
+      
+      local ColorCorrection = Instance.new("ColorCorrectionEffect")
+      ColorCorrection.Name = "Time_NightColor"
+      ColorCorrection.Brightness = -0.1
+      ColorCorrection.Contrast = 0.4
+      ColorCorrection.Saturation = 0.2
+      ColorCorrection.TintColor = Color3.fromRGB(180, 180, 220)
+      ColorCorrection.Parent = Lighting
+      
+      local Atmosphere = Instance.new("Atmosphere")
+      Atmosphere.Name = "Time_NightAtmosphere"
+      Atmosphere.Density = 0.5
+      Atmosphere.Offset = 0.2
+      Atmosphere.Color = Color3.fromRGB(80, 80, 120)
+      Atmosphere.Decay = Color3.fromRGB(50, 50, 80)
+      Atmosphere.Glare = 0.3
+      Atmosphere.Haze = 0.6
+      Atmosphere.Parent = Lighting
+      
+      local Blur = Instance.new("BlurEffect")
+      Blur.Name = "Time_NightBlur"
+      Blur.Size = 1
+      Blur.Parent = Lighting
    end,
 })
 
 local FogButton = RTXTab:CreateButton({
-   Name = "Foggy",
+   Name = "Foggy Shader",
    Callback = function()
       local Lighting = game:GetService("Lighting")
+      
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Time_") then
+            effect:Destroy()
+         end
+      end
+      
       Lighting.FogEnd = 500
       Lighting.FogStart = 0
       Lighting.FogColor = Color3.fromRGB(192, 192, 192)
       Lighting.Brightness = 1.5
+      Lighting.Ambient = Color3.fromRGB(150, 150, 150)
+      Lighting.OutdoorAmbient = Color3.fromRGB(180, 180, 180)
+      Lighting.GlobalShadows = true
+      Lighting.ShadowSoftness = 1
+      
+      local Bloom = Instance.new("BloomEffect")
+      Bloom.Name = "Time_FogBloom"
+      Bloom.Intensity = 0.3
+      Bloom.Size = 20
+      Bloom.Threshold = 0.9
+      Bloom.Parent = Lighting
+      
+      local ColorCorrection = Instance.new("ColorCorrectionEffect")
+      ColorCorrection.Name = "Time_FogColor"
+      ColorCorrection.Brightness = 0
+      ColorCorrection.Contrast = 0.1
+      ColorCorrection.Saturation = -0.2
+      ColorCorrection.TintColor = Color3.fromRGB(220, 220, 230)
+      ColorCorrection.Parent = Lighting
+      
+      local Atmosphere = Instance.new("Atmosphere")
+      Atmosphere.Name = "Time_FogAtmosphere"
+      Atmosphere.Density = 0.8
+      Atmosphere.Offset = 0.5
+      Atmosphere.Color = Color3.fromRGB(200, 200, 210)
+      Atmosphere.Decay = Color3.fromRGB(150, 150, 160)
+      Atmosphere.Glare = 0.2
+      Atmosphere.Haze = 0.9
+      Atmosphere.Parent = Lighting
+      
+      local Blur = Instance.new("BlurEffect")
+      Blur.Name = "Time_FogBlur"
+      Blur.Size = 3
+      Blur.Parent = Lighting
    end,
 })
 
 local StormButton = RTXTab:CreateButton({
-   Name = "Storm",
+   Name = "Storm Shader",
    Callback = function()
       local Lighting = game:GetService("Lighting")
+      
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Time_") then
+            effect:Destroy()
+         end
+      end
+      
       Lighting.ClockTime = 14
       Lighting.Ambient = Color3.fromRGB(80, 80, 100)
       Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 120)
       Lighting.Brightness = 1
       Lighting.FogEnd = 1000
       Lighting.FogColor = Color3.fromRGB(100, 100, 120)
+      Lighting.GlobalShadows = true
+      Lighting.ShadowSoftness = 0.7
+      
+      local Bloom = Instance.new("BloomEffect")
+      Bloom.Name = "Time_StormBloom"
+      Bloom.Intensity = 0.6
+      Bloom.Size = 25
+      Bloom.Threshold = 0.7
+      Bloom.Parent = Lighting
+      
+      local ColorCorrection = Instance.new("ColorCorrectionEffect")
+      ColorCorrection.Name = "Time_StormColor"
+      ColorCorrection.Brightness = -0.05
+      ColorCorrection.Contrast = 0.35
+      ColorCorrection.Saturation = 0.1
+      ColorCorrection.TintColor = Color3.fromRGB(180, 180, 200)
+      ColorCorrection.Parent = Lighting
+      
+      local Atmosphere = Instance.new("Atmosphere")
+      Atmosphere.Name = "Time_StormAtmosphere"
+      Atmosphere.Density = 0.6
+      Atmosphere.Offset = 0.3
+      Atmosphere.Color = Color3.fromRGB(120, 120, 140)
+      Atmosphere.Decay = Color3.fromRGB(80, 80, 100)
+      Atmosphere.Glare = 0.4
+      Atmosphere.Haze = 0.7
+      Atmosphere.Parent = Lighting
+      
+      local Blur = Instance.new("BlurEffect")
+      Blur.Name = "Time_StormBlur"
+      Blur.Size = 2
+      Blur.Parent = Lighting
    end,
 })
 
