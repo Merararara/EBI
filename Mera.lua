@@ -32,12 +32,8 @@ local MainColor = Color3.fromRGB(70, 70, 70)
 local BackgroundColor = Color3.fromRGB(30, 30, 30)
 
 for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
-   if obj:IsA("Frame") then
-      if obj.Name:match("Main") or obj.Name:match("Top") or obj.Name:match("Tab") then
-         obj.BackgroundColor3 = BackgroundColor
-      elseif not obj.Name:match("Shadow") then
-         obj.BackgroundColor3 = MainColor
-      end
+   if obj:IsA("Frame") and not obj.Name:match("Shadow") then
+      obj.BackgroundColor3 = MainColor
    end
    if obj:IsA("TextButton") then
       obj.BackgroundColor3 = MainColor
@@ -45,6 +41,20 @@ for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
    end
    if obj:IsA("ImageButton") then
       obj.ImageColor3 = MainColor
+   end
+   if obj:IsA("ScrollingFrame") then
+      obj.BackgroundColor3 = BackgroundColor
+   end
+end
+
+local topBar = game:GetService("CoreGui"):FindFirstChild("Rayfield", true)
+if topBar then
+   for _, obj in pairs(topBar:GetDescendants()) do
+      if obj.Name == "TopBar" or obj.Name == "Main" or obj.Name == "Title" then
+         if obj:IsA("Frame") then
+            obj.BackgroundColor3 = BackgroundColor
+         end
+      end
    end
 end
 
