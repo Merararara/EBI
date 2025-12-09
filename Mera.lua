@@ -2,6 +2,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "Merara Hub",
+   Icon = 1298248131,
    LoadingTitle = "Loading...",
    LoadingSubtitle = "Merara!!",
    Theme = "White",
