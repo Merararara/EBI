@@ -26,6 +26,28 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
+task.wait(0.5)
+
+local MainColor = Color3.fromRGB(70, 70, 70)
+local BackgroundColor = Color3.fromRGB(30, 30, 30)
+
+for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+   if obj:IsA("Frame") then
+      if obj.Name:match("Main") or obj.Name:match("Top") or obj.Name:match("Tab") then
+         obj.BackgroundColor3 = BackgroundColor
+      elseif not obj.Name:match("Shadow") then
+         obj.BackgroundColor3 = MainColor
+      end
+   end
+   if obj:IsA("TextButton") then
+      obj.BackgroundColor3 = MainColor
+      obj.BorderColor3 = MainColor
+   end
+   if obj:IsA("ImageButton") then
+      obj.ImageColor3 = MainColor
+   end
+end
+
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local PlayerSection = PlayerTab:CreateSection("Player Settings")
 
@@ -111,83 +133,37 @@ local NoClipCamToggle = PlayerTab:CreateToggle({
       getgenv().NoClipCam = Value
       
       local Camera = game.Workspace.CurrentCamera
-      local Player = game.Players.LocalPlayer
-      local Character = Player.Character or Player.CharacterAdded:Wait()
-      local Humanoid = Character:WaitForChild("Humanoid")
-      local RootPart = Character:WaitForChild("HumanoidRootPart")
-      
-      local speed = 50
       
       if Value then
-         Camera.CameraType = Enum.CameraType.Scriptable
+         getgenv().OriginalCameraMode = Camera.CameraType
          
-         local keys = {
-            W = false,
-            A = false,
-            S = false,
-            D = false,
-            E = false,
-            Q = false,
-            Space = false,
-            LeftShift = false
-         }
-         
-         game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-            if not gameProcessed and getgenv().NoClipCam then
-               if input.KeyCode == Enum.KeyCode.W then keys.W = true end
-               if input.KeyCode == Enum.KeyCode.A then keys.A = true end
-               if input.KeyCode == Enum.KeyCode.S then keys.S = true end
-               if input.KeyCode == Enum.KeyCode.D then keys.D = true end
-               if input.KeyCode == Enum.KeyCode.E then keys.E = true end
-               if input.KeyCode == Enum.KeyCode.Q then keys.Q = true end
-               if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
-               if input.KeyCode == Enum.KeyCode.LeftShift then keys.LeftShift = true end
+         for _, part in pairs(Camera:GetDescendants()) do
+            if part:IsA("BasePart") then
+               part.CanCollide = false
             end
-         end)
-         
-         game:GetService("UserInputService").InputEnded:Connect(function(input)
-            if getgenv().NoClipCam then
-               if input.KeyCode == Enum.KeyCode.W then keys.W = false end
-               if input.KeyCode == Enum.KeyCode.A then keys.A = false end
-               if input.KeyCode == Enum.KeyCode.S then keys.S = false end
-               if input.KeyCode == Enum.KeyCode.D then keys.D = false end
-               if input.KeyCode == Enum.KeyCode.E then keys.E = false end
-               if input.KeyCode == Enum.KeyCode.Q then keys.Q = false end
-               if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
-               if input.KeyCode == Enum.KeyCode.LeftShift then keys.LeftShift = false end
-            end
-         end)
+         end
          
          game:GetService("RunService").RenderStepped:Connect(function()
             if getgenv().NoClipCam then
-               local moveSpeed = keys.LeftShift and speed * 2 or speed
-               
-               if keys.W then
-                  Camera.CFrame = Camera.CFrame + (Camera.CFrame.LookVector * moveSpeed * 0.1)
-               end
-               if keys.S then
-                  Camera.CFrame = Camera.CFrame - (Camera.CFrame.LookVector * moveSpeed * 0.1)
-               end
-               if keys.A then
-                  Camera.CFrame = Camera.CFrame - (Camera.CFrame.RightVector * moveSpeed * 0.1)
-               end
-               if keys.D then
-                  Camera.CFrame = Camera.CFrame + (Camera.CFrame.RightVector * moveSpeed * 0.1)
-               end
-               if keys.E then
-                  Camera.CFrame = Camera.CFrame + Vector3.new(0, moveSpeed * 0.1, 0)
-               end
-               if keys.Q then
-                  Camera.CFrame = Camera.CFrame - Vector3.new(0, moveSpeed * 0.1, 0)
-               end
-               if keys.Space then
-                  Camera.CFrame = Camera.CFrame + Vector3.new(0, moveSpeed * 0.1, 0)
+               for _, part in pairs(game.Workspace:GetDescendants()) do
+                  if part:IsA("BasePart") then
+                     part.LocalTransparencyModifier = 0.5
+                  end
                end
             end
          end)
-      else
+         
          Camera.CameraType = Enum.CameraType.Custom
-         Camera.CameraSubject = Humanoid
+      else
+         if getgenv().OriginalCameraMode then
+            Camera.CameraType = getgenv().OriginalCameraMode
+         end
+         
+         for _, part in pairs(game.Workspace:GetDescendants()) do
+            if part:IsA("BasePart") then
+               part.LocalTransparencyModifier = 0
+            end
+         end
       end
    end,
 })
@@ -202,13 +178,16 @@ local function getPlayerList()
          table.insert(players, player.Name)
       end
    end
+   if #players == 0 then
+      table.insert(players, "None")
+   end
    return players
 end
 
 local PlayerDropdown = TpTab:CreateDropdown({
    Name = "Select Player",
    Options = getPlayerList(),
-   CurrentOption = {"None"},
+   CurrentOption = getPlayerList(),
    MultipleOptions = false,
    Flag = "PlayerDropdown",
    Callback = function(Option)
@@ -217,10 +196,12 @@ local PlayerDropdown = TpTab:CreateDropdown({
 })
 
 task.spawn(function()
-   while wait(3) do
-      local players = getPlayerList()
-      if #players > 0 then
-         PlayerDropdown:Refresh(players)
+   while task.wait(2) do
+      if PlayerDropdown then
+         local players = getPlayerList()
+         pcall(function()
+            PlayerDropdown:Refresh(players)
+         end)
       end
    end
 end)
