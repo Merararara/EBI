@@ -1,9 +1,9 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Game UI - Complete",
-   LoadingTitle = "Loading UI...",
-   LoadingSubtitle = "by Your Name",
+   Name = "Merara Hub",
+   LoadingTitle = "Loading...",
+   LoadingSubtitle = "Merara!!",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = nil,
@@ -26,9 +26,11 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
--- ==================== Player Tab ====================
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local PlayerSection = PlayerTab:CreateSection("Player Settings")
+
+getgenv().SavedWalkSpeed = 16
+getgenv().SavedJumpPower = 50
 
 local WalkSpeedSlider = PlayerTab:CreateSlider({
    Name = "Walk Speed",
@@ -38,7 +40,10 @@ local WalkSpeedSlider = PlayerTab:CreateSlider({
    CurrentValue = 16,
    Flag = "WalkSpeedSlider",
    Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      getgenv().SavedWalkSpeed = Value
+      if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      end
    end,
 })
 
@@ -50,9 +55,19 @@ local JumpPowerSlider = PlayerTab:CreateSlider({
    CurrentValue = 50,
    Flag = "JumpPowerSlider",
    Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+      getgenv().SavedJumpPower = Value
+      if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+         game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+      end
    end,
 })
+
+game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
+   char:WaitForChild("Humanoid")
+   wait(0.1)
+   char.Humanoid.WalkSpeed = getgenv().SavedWalkSpeed
+   char.Humanoid.JumpPower = getgenv().SavedJumpPower
+end)
 
 local InfiniteJumpToggle = PlayerTab:CreateToggle({
    Name = "Infinite Jump",
@@ -88,11 +103,9 @@ local NoClipToggle = PlayerTab:CreateToggle({
    end,
 })
 
--- ==================== TP Tab ====================
 local TpTab = Window:CreateTab("Tp", 4483362458)
 local TpSection = TpTab:CreateSection("Teleport")
 
--- Get player list function
 local function getPlayerList()
    local players = {}
    for _, player in pairs(game.Players:GetPlayers()) do
@@ -114,7 +127,6 @@ local PlayerDropdown = TpTab:CreateDropdown({
    end,
 })
 
--- Update player list every 3 seconds
 task.spawn(function()
    while wait(3) do
       local players = getPlayerList()
@@ -162,17 +174,14 @@ local TpToCoordButton = TpTab:CreateButton({
    end,
 })
 
--- ==================== ESP Tab ====================
 local EspTab = Window:CreateTab("ESP", 4483362458)
 local EspSection = EspTab:CreateSection("ESP Settings")
 
--- Store ESP connections
 getgenv().ESPConnections = {}
 
 local function createESP(player)
    pcall(function()
       if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-         -- Remove existing ESP first
          local oldHighlight = player.Character:FindFirstChild("ESP_Highlight")
          if oldHighlight then
             oldHighlight:Destroy()
@@ -205,7 +214,6 @@ local function removeAllESP()
       removeESP(player)
    end
    
-   -- Disconnect all connections
    for _, connection in pairs(getgenv().ESPConnections) do
       connection:Disconnect()
    end
@@ -220,12 +228,10 @@ local PlayerESPToggle = EspTab:CreateToggle({
       getgenv().PlayerESP = Value
       
       if Value then
-         -- Add ESP to existing players
          for _, player in pairs(game.Players:GetPlayers()) do
             if player ~= game.Players.LocalPlayer then
                createESP(player)
                
-               -- Handle character respawn
                local charAddedConn = player.CharacterAdded:Connect(function()
                   if getgenv().PlayerESP then
                      wait(0.5)
@@ -236,7 +242,6 @@ local PlayerESPToggle = EspTab:CreateToggle({
             end
          end
          
-         -- Handle new players joining
          local playerAddedConn = game.Players.PlayerAdded:Connect(function(player)
             if getgenv().PlayerESP then
                player.CharacterAdded:Connect(function()
@@ -328,240 +333,85 @@ local NameESPToggle = EspTab:CreateToggle({
    end,
 })
 
--- ==================== Fling Tab ====================
-local FlingTab = Window:CreateTab("Fling", 4483362458)
-local FlingSection = FlingTab:CreateSection("Fling Settings")
-
--- Fling Power Setting
-local FlingPower = 500
-
-local FlingPowerSlider = FlingTab:CreateSlider({
-   Name = "Fling Power",
-   Range = {100, 2000},
-   Increment = 50,
-   Suffix = "Power",
-   CurrentValue = 500,
-   Flag = "FlingPower",
-   Callback = function(Value)
-      FlingPower = Value
-   end,
-})
-
--- Walk Fling Toggle
-local WalkFlingToggle = FlingTab:CreateToggle({
-   Name = "Walk Fling",
-   CurrentValue = false,
-   Flag = "WalkFling",
-   Callback = function(Value)
-      getgenv().WalkFling = Value
-      
-      if Value then
-         local Char = game.Players.LocalPlayer.Character
-         local HRP = Char:FindFirstChild("HumanoidRootPart")
-         
-         if HRP then
-            local BV = Instance.new("BodyVelocity")
-            BV.Name = "FlingVelocity"
-            BV.MaxForce = Vector3.new(100000, 0, 100000)
-            BV.Velocity = Vector3.new(0, 0, 0)
-            BV.Parent = HRP
-            
-            game:GetService("RunService").Heartbeat:Connect(function()
-               if getgenv().WalkFling and Char and HRP then
-                  if Char.Humanoid.MoveDirection.Magnitude > 0 then
-                     BV.Velocity = Char.Humanoid.MoveDirection * FlingPower
-                  else
-                     BV.Velocity = Vector3.new(0, 0, 0)
-                  end
-               elseif BV then
-                  BV:Destroy()
-               end
-            end)
-         end
-      else
-         local HRP = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-         if HRP then
-            local BV = HRP:FindFirstChild("FlingVelocity")
-            if BV then
-               BV:Destroy()
-            end
-         end
-      end
-   end,
-})
-
--- Target Player Fling
-local FlingTargetDropdown = FlingTab:CreateDropdown({
-   Name = "Select Target",
-   Options = getPlayerList(),
-   CurrentOption = {"None"},
-   MultipleOptions = false,
-   Flag = "FlingTarget",
-   Callback = function(Option)
-      getgenv().FlingTarget = Option[1]
-   end,
-})
-
-task.spawn(function()
-   while wait(3) do
-      local players = getPlayerList()
-      if #players > 0 then
-         FlingTargetDropdown:Refresh(players)
-      end
-   end
-end)
-
-local FlingTargetButton = FlingTab:CreateButton({
-   Name = "Fling Selected Player",
-   Callback = function()
-      if getgenv().FlingTarget and getgenv().FlingTarget ~= "None" then
-         local targetPlayer = game.Players:FindFirstChild(getgenv().FlingTarget)
-         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local Char = game.Players.LocalPlayer.Character
-            local HRP = Char:FindFirstChild("HumanoidRootPart")
-            local TargetHRP = targetPlayer.Character.HumanoidRootPart
-            
-            -- Save original position
-            local OriginalPos = HRP.CFrame
-            
-            -- Disable character collision
-            for _, v in pairs(Char:GetDescendants()) do
-               if v:IsA("BasePart") then
-                  v.CanCollide = false
-               end
-            end
-            
-            -- Create fling effect
-            local BV = Instance.new("BodyVelocity")
-            BV.MaxForce = Vector3.new(100000, 100000, 100000)
-            BV.Velocity = Vector3.new(0, 0, 0)
-            BV.Parent = HRP
-            
-            -- Fling loop
-            for i = 1, 10 do
-               HRP.CFrame = TargetHRP.CFrame
-               BV.Velocity = Vector3.new(math.random(-FlingPower, FlingPower), FlingPower, math.random(-FlingPower, FlingPower))
-               wait(0.1)
-            end
-            
-            -- Cleanup
-            BV:Destroy()
-            HRP.CFrame = OriginalPos
-            
-            -- Re-enable collision
-            for _, v in pairs(Char:GetDescendants()) do
-               if v:IsA("BasePart") then
-                  v.CanCollide = true
-               end
-            end
-         end
-      end
-   end,
-})
-
--- All Fling
-local AllFlingButton = FlingTab:CreateButton({
-   Name = "Fling All Players",
-   Callback = function()
-      local Char = game.Players.LocalPlayer.Character
-      local HRP = Char:FindFirstChild("HumanoidRootPart")
-      local OriginalPos = HRP.CFrame
-      
-      -- Disable collision
-      for _, v in pairs(Char:GetDescendants()) do
-         if v:IsA("BasePart") then
-            v.CanCollide = false
-         end
-      end
-      
-      local BV = Instance.new("BodyVelocity")
-      BV.MaxForce = Vector3.new(100000, 100000, 100000)
-      BV.Parent = HRP
-      
-      -- Fling all players
-      for _, player in pairs(game.Players:GetPlayers()) do
-         if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            for i = 1, 5 do
-               HRP.CFrame = player.Character.HumanoidRootPart.CFrame
-               BV.Velocity = Vector3.new(math.random(-FlingPower, FlingPower), FlingPower, math.random(-FlingPower, FlingPower))
-               wait(0.05)
-            end
-         end
-      end
-      
-      -- Cleanup
-      BV:Destroy()
-      HRP.CFrame = OriginalPos
-      
-      for _, v in pairs(Char:GetDescendants()) do
-         if v:IsA("BasePart") then
-            v.CanCollide = true
-         end
-      end
-   end,
-})
-
--- Anti Fling
-local AntiFlingToggle = FlingTab:CreateToggle({
-   Name = "Anti Fling",
-   CurrentValue = false,
-   Flag = "AntiFling",
-   Callback = function(Value)
-      getgenv().AntiFling = Value
-      
-      if Value then
-         local Char = game.Players.LocalPlayer.Character
-         
-         for _, v in pairs(Char:GetDescendants()) do
-            if v:IsA("BasePart") then
-               local BA = Instance.new("BodyAngularVelocity")
-               BA.Name = "AntiFling"
-               BA.MaxTorque = Vector3.new(100000, 100000, 100000)
-               BA.AngularVelocity = Vector3.new(0, 0, 0)
-               BA.Parent = v
-               
-               local BV = Instance.new("BodyVelocity")
-               BV.Name = "AntiFling"
-               BV.MaxForce = Vector3.new(100000, 100000, 100000)
-               BV.Velocity = Vector3.new(0, 0, 0)
-               BV.Parent = v
-            end
-         end
-         
-         game:GetService("RunService").Heartbeat:Connect(function()
-            if getgenv().AntiFling then
-               for _, v in pairs(Char:GetDescendants()) do
-                  if v:IsA("BasePart") then
-                     v.Velocity = Vector3.new(0, 0, 0)
-                     v.RotVelocity = Vector3.new(0, 0, 0)
-                  end
-               end
-            end
-         end)
-      else
-         local Char = game.Players.LocalPlayer.Character
-         
-         for _, v in pairs(Char:GetDescendants()) do
-            if v:IsA("BasePart") then
-               local BA = v:FindFirstChild("AntiFling")
-               if BA and BA:IsA("BodyAngularVelocity") then
-                  BA:Destroy()
-               end
-               local BV = v:FindFirstChild("AntiFling")
-               if BV and BA:IsA("BodyVelocity") then
-                  BV:Destroy()
-               end
-            end
-         end
-      end
-   end,
-})
-
--- ==================== RTX Tab ====================
 local RTXTab = Window:CreateTab("RTX", 4483362458)
 local RTXSection = RTXTab:CreateSection("Graphics Settings")
 
--- RTX Toggle (Enhanced Lighting)
+local TimeSection = RTXTab:CreateSection("Time Presets")
+
+local MorningButton = RTXTab:CreateButton({
+   Name = "Morning",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      Lighting.ClockTime = 6
+      Lighting.Ambient = Color3.fromRGB(170, 170, 170)
+      Lighting.OutdoorAmbient = Color3.fromRGB(200, 180, 140)
+      Lighting.Brightness = 2
+      Lighting.FogEnd = 100000
+   end,
+})
+
+local NoonButton = RTXTab:CreateButton({
+   Name = "Noon (Day)",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      Lighting.ClockTime = 12
+      Lighting.Ambient = Color3.fromRGB(200, 200, 200)
+      Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+      Lighting.Brightness = 3
+      Lighting.FogEnd = 100000
+   end,
+})
+
+local SunsetButton = RTXTab:CreateButton({
+   Name = "Sunset",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      Lighting.ClockTime = 18
+      Lighting.Ambient = Color3.fromRGB(150, 100, 80)
+      Lighting.OutdoorAmbient = Color3.fromRGB(255, 140, 50)
+      Lighting.Brightness = 1.5
+      Lighting.FogEnd = 50000
+   end,
+})
+
+local NightButton = RTXTab:CreateButton({
+   Name = "Night",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      Lighting.ClockTime = 0
+      Lighting.Ambient = Color3.fromRGB(50, 50, 80)
+      Lighting.OutdoorAmbient = Color3.fromRGB(30, 30, 60)
+      Lighting.Brightness = 0.5
+      Lighting.FogEnd = 30000
+   end,
+})
+
+local FogButton = RTXTab:CreateButton({
+   Name = "Foggy",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      Lighting.FogEnd = 500
+      Lighting.FogStart = 0
+      Lighting.FogColor = Color3.fromRGB(192, 192, 192)
+      Lighting.Brightness = 1.5
+   end,
+})
+
+local StormButton = RTXTab:CreateButton({
+   Name = "Storm",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      Lighting.ClockTime = 14
+      Lighting.Ambient = Color3.fromRGB(80, 80, 100)
+      Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 120)
+      Lighting.Brightness = 1
+      Lighting.FogEnd = 1000
+      Lighting.FogColor = Color3.fromRGB(100, 100, 120)
+   end,
+})
+
+local EffectsSection = RTXTab:CreateSection("Effects")
+
 local RTXToggle = RTXTab:CreateToggle({
    Name = "RTX Mode",
    CurrentValue = false,
@@ -570,7 +420,6 @@ local RTXToggle = RTXTab:CreateToggle({
       local Lighting = game:GetService("Lighting")
       
       if Value then
-         -- Save original settings
          getgenv().OriginalLighting = {
             Ambient = Lighting.Ambient,
             Brightness = Lighting.Brightness,
@@ -580,7 +429,6 @@ local RTXToggle = RTXTab:CreateToggle({
             ExposureCompensation = Lighting.ExposureCompensation
          }
          
-         -- Apply RTX settings
          Lighting.Ambient = Color3.fromRGB(128, 128, 128)
          Lighting.Brightness = 2.5
          Lighting.ColorShift_Bottom = Color3.fromRGB(11, 0, 20)
@@ -588,7 +436,6 @@ local RTXToggle = RTXTab:CreateToggle({
          Lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
          Lighting.ExposureCompensation = 0.2
          
-         -- Add effects
          if not Lighting:FindFirstChild("BloomEffect") then
             local Bloom = Instance.new("BloomEffect")
             Bloom.Name = "RTX_Bloom"
@@ -626,7 +473,6 @@ local RTXToggle = RTXTab:CreateToggle({
             DepthOfField.Parent = Lighting
          end
       else
-         -- Restore original settings
          if getgenv().OriginalLighting then
             Lighting.Ambient = getgenv().OriginalLighting.Ambient
             Lighting.Brightness = getgenv().OriginalLighting.Brightness
@@ -636,7 +482,6 @@ local RTXToggle = RTXTab:CreateToggle({
             Lighting.ExposureCompensation = getgenv().OriginalLighting.ExposureCompensation
          end
          
-         -- Remove effects
          for _, effect in pairs(Lighting:GetChildren()) do
             if effect.Name:match("RTX_") then
                effect:Destroy()
@@ -646,7 +491,6 @@ local RTXToggle = RTXTab:CreateToggle({
    end,
 })
 
--- Bloom Effect
 local BloomToggle = RTXTab:CreateToggle({
    Name = "Bloom Effect",
    CurrentValue = false,
@@ -686,7 +530,6 @@ local BloomIntensitySlider = RTXTab:CreateSlider({
    end,
 })
 
--- Sun Rays Effect
 local SunRaysToggle = RTXTab:CreateToggle({
    Name = "Sun Rays",
    CurrentValue = false,
@@ -709,7 +552,6 @@ local SunRaysToggle = RTXTab:CreateToggle({
    end,
 })
 
--- Color Correction
 local ColorCorrectionToggle = RTXTab:CreateToggle({
    Name = "Color Correction",
    CurrentValue = false,
@@ -749,7 +591,6 @@ local SaturationSlider = RTXTab:CreateSlider({
    end,
 })
 
--- Atmosphere Effect
 local AtmosphereToggle = RTXTab:CreateToggle({
    Name = "Atmosphere",
    CurrentValue = false,
@@ -776,7 +617,6 @@ local AtmosphereToggle = RTXTab:CreateToggle({
    end,
 })
 
--- Remove Shadows
 local NoShadowsToggle = RTXTab:CreateToggle({
    Name = "Remove Shadows",
    CurrentValue = false,
@@ -793,7 +633,6 @@ local NoShadowsToggle = RTXTab:CreateToggle({
    end,
 })
 
--- Performance Mode
 local PerformanceModeToggle = RTXTab:CreateToggle({
    Name = "Performance Mode",
    CurrentValue = false,
@@ -802,43 +641,36 @@ local PerformanceModeToggle = RTXTab:CreateToggle({
       local Lighting = game:GetService("Lighting")
       
       if Value then
-         -- Remove all effects for better performance
          for _, effect in pairs(Lighting:GetChildren()) do
             if effect:IsA("PostEffect") or effect:IsA("Atmosphere") then
                effect.Enabled = false
             end
          end
          
-         -- Lower graphics settings
          settings().Rendering.QualityLevel = "Level01"
       else
-         -- Re-enable effects
          for _, effect in pairs(Lighting:GetChildren()) do
             if effect:IsA("PostEffect") or effect:IsA("Atmosphere") then
                effect.Enabled = true
             end
          end
          
-         -- Restore graphics
          settings().Rendering.QualityLevel = "Automatic"
       end
    end,
 })
 
--- Reset Graphics
 local ResetGraphicsButton = RTXTab:CreateButton({
    Name = "Reset All Graphics",
    Callback = function()
       local Lighting = game:GetService("Lighting")
       
-      -- Remove all custom effects
       for _, effect in pairs(Lighting:GetChildren()) do
          if effect.Name:match("Custom") or effect.Name:match("RTX_") then
             effect:Destroy()
          end
       end
       
-      -- Reset to defaults
       Lighting.Ambient = Color3.fromRGB(138, 138, 138)
       Lighting.Brightness = 2
       Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
@@ -850,7 +682,6 @@ local ResetGraphicsButton = RTXTab:CreateButton({
    end,
 })
 
--- ==================== FE Universal Tab ====================
 local FETab = Window:CreateTab("FE Universal", 4483362458)
 local FESection = FETab:CreateSection("FE Scripts")
 
@@ -896,7 +727,6 @@ local PortalButton = FETab:CreateButton({
    end,
 })
 
--- ==================== Misc Tab ====================
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 local MiscSection = MiscTab:CreateSection("Other Settings")
 
@@ -916,7 +746,6 @@ local ColorPicker = MiscTab:CreateColorPicker({
    Color = Color3.fromRGB(255, 255, 255),
    Flag = "ColorPicker",
    Callback = function(Value)
-      -- Apply custom accent color to UI elements
       for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
          if obj:IsA("Frame") or obj:IsA("TextButton") then
             if obj.BackgroundColor3 ~= Color3.fromRGB(30, 30, 30) then
@@ -925,6 +754,102 @@ local ColorPicker = MiscTab:CreateColorPicker({
          end
       end
    end
+})
+
+local ColorSection = MiscTab:CreateSection("Quick Colors")
+
+local PurpleButton = MiscTab:CreateButton({
+   Name = "Purple Theme",
+   Callback = function()
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+            end
+         end
+      end
+   end,
+})
+
+local WhiteButton = MiscTab:CreateButton({
+   Name = "White Theme",
+   Callback = function()
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            end
+         end
+         if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            obj.TextColor3 = Color3.fromRGB(0, 0, 0)
+         end
+      end
+   end,
+})
+
+local BlackButton = MiscTab:CreateButton({
+   Name = "Black Theme",
+   Callback = function()
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            end
+         end
+      end
+   end,
+})
+
+local GrayButton = MiscTab:CreateButton({
+   Name = "Gray Theme",
+   Callback = function()
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(128, 128, 128)
+            end
+         end
+      end
+   end,
+})
+
+local SkyBlueButton = MiscTab:CreateButton({
+   Name = "Sky Blue Theme",
+   Callback = function()
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(135, 206, 235)
+            end
+         end
+      end
+   end,
+})
+
+local PinkButton = MiscTab:CreateButton({
+   Name = "Pink Theme",
+   Callback = function()
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(255, 192, 203)
+            end
+         end
+      end
+   end,
+})
+
+local BrownButton = MiscTab:CreateButton({
+   Name = "Brown Theme",
+   Callback = function()
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(139, 69, 19)
+            end
+         end
+      end
+   end,
 })
 
 local FPSCounter = MiscTab:CreateLabel("FPS: 0")
@@ -995,6 +920,36 @@ local AntiAFKToggle = MiscTab:CreateToggle({
                VirtualUser:ClickButton2(Vector2.new())
             end
          end)
+      end
+   end,
+})
+
+local AntiFlingToggle = MiscTab:CreateToggle({
+   Name = "Anti Fling",
+   CurrentValue = false,
+   Flag = "AntiFling",
+   Callback = function(Value)
+      getgenv().AntiFling = Value
+      
+      local Player = game.Players.LocalPlayer
+      local Character = Player.Character or Player.CharacterAdded:Wait()
+      local RootPart = Character:WaitForChild("HumanoidRootPart")
+      
+      if Value then
+         getgenv().AntiFlingConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            if getgenv().AntiFling and Character and RootPart then
+               for _, v in pairs(Character:GetDescendants()) do
+                  if v:IsA("BasePart") then
+                     v.Velocity = Vector3.new(0, 0, 0)
+                     v.RotVelocity = Vector3.new(0, 0, 0)
+                  end
+               end
+            end
+         end)
+      else
+         if getgenv().AntiFlingConnection then
+            getgenv().AntiFlingConnection:Disconnect()
+         end
       end
    end,
 })
