@@ -103,6 +103,95 @@ local NoClipToggle = PlayerTab:CreateToggle({
    end,
 })
 
+local NoClipCamToggle = PlayerTab:CreateToggle({
+   Name = "NoClip Cam",
+   CurrentValue = false,
+   Flag = "NoClipCam",
+   Callback = function(Value)
+      getgenv().NoClipCam = Value
+      
+      local Camera = game.Workspace.CurrentCamera
+      local Player = game.Players.LocalPlayer
+      local Character = Player.Character or Player.CharacterAdded:Wait()
+      local Humanoid = Character:WaitForChild("Humanoid")
+      local RootPart = Character:WaitForChild("HumanoidRootPart")
+      
+      local speed = 50
+      
+      if Value then
+         Camera.CameraType = Enum.CameraType.Scriptable
+         
+         local keys = {
+            W = false,
+            A = false,
+            S = false,
+            D = false,
+            E = false,
+            Q = false,
+            Space = false,
+            LeftShift = false
+         }
+         
+         game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+            if not gameProcessed and getgenv().NoClipCam then
+               if input.KeyCode == Enum.KeyCode.W then keys.W = true end
+               if input.KeyCode == Enum.KeyCode.A then keys.A = true end
+               if input.KeyCode == Enum.KeyCode.S then keys.S = true end
+               if input.KeyCode == Enum.KeyCode.D then keys.D = true end
+               if input.KeyCode == Enum.KeyCode.E then keys.E = true end
+               if input.KeyCode == Enum.KeyCode.Q then keys.Q = true end
+               if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
+               if input.KeyCode == Enum.KeyCode.LeftShift then keys.LeftShift = true end
+            end
+         end)
+         
+         game:GetService("UserInputService").InputEnded:Connect(function(input)
+            if getgenv().NoClipCam then
+               if input.KeyCode == Enum.KeyCode.W then keys.W = false end
+               if input.KeyCode == Enum.KeyCode.A then keys.A = false end
+               if input.KeyCode == Enum.KeyCode.S then keys.S = false end
+               if input.KeyCode == Enum.KeyCode.D then keys.D = false end
+               if input.KeyCode == Enum.KeyCode.E then keys.E = false end
+               if input.KeyCode == Enum.KeyCode.Q then keys.Q = false end
+               if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
+               if input.KeyCode == Enum.KeyCode.LeftShift then keys.LeftShift = false end
+            end
+         end)
+         
+         game:GetService("RunService").RenderStepped:Connect(function()
+            if getgenv().NoClipCam then
+               local moveSpeed = keys.LeftShift and speed * 2 or speed
+               
+               if keys.W then
+                  Camera.CFrame = Camera.CFrame + (Camera.CFrame.LookVector * moveSpeed * 0.1)
+               end
+               if keys.S then
+                  Camera.CFrame = Camera.CFrame - (Camera.CFrame.LookVector * moveSpeed * 0.1)
+               end
+               if keys.A then
+                  Camera.CFrame = Camera.CFrame - (Camera.CFrame.RightVector * moveSpeed * 0.1)
+               end
+               if keys.D then
+                  Camera.CFrame = Camera.CFrame + (Camera.CFrame.RightVector * moveSpeed * 0.1)
+               end
+               if keys.E then
+                  Camera.CFrame = Camera.CFrame + Vector3.new(0, moveSpeed * 0.1, 0)
+               end
+               if keys.Q then
+                  Camera.CFrame = Camera.CFrame - Vector3.new(0, moveSpeed * 0.1, 0)
+               end
+               if keys.Space then
+                  Camera.CFrame = Camera.CFrame + Vector3.new(0, moveSpeed * 0.1, 0)
+               end
+            end
+         end)
+      else
+         Camera.CameraType = Enum.CameraType.Custom
+         Camera.CameraSubject = Humanoid
+      end
+   end,
+})
+
 local TpTab = Window:CreateTab("Tp", 4483362458)
 local TpSection = TpTab:CreateSection("Teleport")
 
@@ -334,7 +423,118 @@ local NameESPToggle = EspTab:CreateToggle({
 })
 
 local RTXTab = Window:CreateTab("RTX", 4483362458)
-local RTXSection = RTXTab:CreateSection("Graphics Settings")
+local RTXSection = RTXTab:CreateSection("Ultra Realistic Graphics")
+
+local ShaderToggle = RTXTab:CreateToggle({
+   Name = "Ultra Shader Mode",
+   CurrentValue = false,
+   Flag = "UltraShader",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         getgenv().OriginalLightingShader = {
+            Ambient = Lighting.Ambient,
+            Brightness = Lighting.Brightness,
+            ColorShift_Bottom = Lighting.ColorShift_Bottom,
+            ColorShift_Top = Lighting.ColorShift_Top,
+            OutdoorAmbient = Lighting.OutdoorAmbient,
+            ExposureCompensation = Lighting.ExposureCompensation,
+            GlobalShadows = Lighting.GlobalShadows,
+            ShadowSoftness = Lighting.ShadowSoftness
+         }
+         
+         Lighting.Ambient = Color3.fromRGB(70, 70, 70)
+         Lighting.Brightness = 3
+         Lighting.ColorShift_Bottom = Color3.fromRGB(25, 25, 40)
+         Lighting.ColorShift_Top = Color3.fromRGB(255, 200, 150)
+         Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 110)
+         Lighting.ExposureCompensation = 0.3
+         Lighting.GlobalShadows = true
+         Lighting.ShadowSoftness = 1
+         
+         local Bloom = Instance.new("BloomEffect")
+         Bloom.Name = "Shader_Bloom"
+         Bloom.Intensity = 0.6
+         Bloom.Size = 32
+         Bloom.Threshold = 0.7
+         Bloom.Parent = Lighting
+         
+         local SunRays = Instance.new("SunRaysEffect")
+         SunRays.Name = "Shader_SunRays"
+         SunRays.Intensity = 0.25
+         SunRays.Spread = 0.5
+         SunRays.Parent = Lighting
+         
+         local ColorCorrection = Instance.new("ColorCorrectionEffect")
+         ColorCorrection.Name = "Shader_ColorCorrection"
+         ColorCorrection.Brightness = 0.1
+         ColorCorrection.Contrast = 0.3
+         ColorCorrection.Saturation = 0.4
+         ColorCorrection.TintColor = Color3.fromRGB(255, 250, 240)
+         ColorCorrection.Parent = Lighting
+         
+         local DepthOfField = Instance.new("DepthOfFieldEffect")
+         DepthOfField.Name = "Shader_DepthOfField"
+         DepthOfField.FarIntensity = 0.15
+         DepthOfField.FocusDistance = 0.1
+         DepthOfField.InFocusRadius = 30
+         DepthOfField.NearIntensity = 0.75
+         DepthOfField.Parent = Lighting
+         
+         local Atmosphere = Instance.new("Atmosphere")
+         Atmosphere.Name = "Shader_Atmosphere"
+         Atmosphere.Density = 0.4
+         Atmosphere.Offset = 0.3
+         Atmosphere.Color = Color3.fromRGB(200, 200, 210)
+         Atmosphere.Decay = Color3.fromRGB(100, 105, 115)
+         Atmosphere.Glare = 0.6
+         Atmosphere.Haze = 0.6
+         Atmosphere.Parent = Lighting
+         
+         local Blur = Instance.new("BlurEffect")
+         Blur.Name = "Shader_Blur"
+         Blur.Size = 2
+         Blur.Parent = Lighting
+      else
+         if getgenv().OriginalLightingShader then
+            Lighting.Ambient = getgenv().OriginalLightingShader.Ambient
+            Lighting.Brightness = getgenv().OriginalLightingShader.Brightness
+            Lighting.ColorShift_Bottom = getgenv().OriginalLightingShader.ColorShift_Bottom
+            Lighting.ColorShift_Top = getgenv().OriginalLightingShader.ColorShift_Top
+            Lighting.OutdoorAmbient = getgenv().OriginalLightingShader.OutdoorAmbient
+            Lighting.ExposureCompensation = getgenv().OriginalLightingShader.ExposureCompensation
+            Lighting.GlobalShadows = getgenv().OriginalLightingShader.GlobalShadows
+            Lighting.ShadowSoftness = getgenv().OriginalLightingShader.ShadowSoftness
+         end
+         
+         for _, effect in pairs(Lighting:GetChildren()) do
+            if effect.Name:match("Shader_") then
+               effect:Destroy()
+            end
+         end
+      end
+   end,
+})
+
+local RealisticShadowsToggle = RTXTab:CreateToggle({
+   Name = "Ultra Realistic Shadows",
+   CurrentValue = false,
+   Flag = "RealisticShadows",
+   Callback = function(Value)
+      local Lighting = game:GetService("Lighting")
+      
+      if Value then
+         Lighting.GlobalShadows = true
+         Lighting.ShadowSoftness = 1
+         Lighting.Technology = Enum.Technology.Future
+      else
+         Lighting.GlobalShadows = true
+         Lighting.ShadowSoftness = 0.2
+         Lighting.Technology = Enum.Technology.Compatibility
+      end
+   end,
+})
 
 local TimeSection = RTXTab:CreateSection("Time Presets")
 
@@ -666,7 +866,7 @@ local ResetGraphicsButton = RTXTab:CreateButton({
       local Lighting = game:GetService("Lighting")
       
       for _, effect in pairs(Lighting:GetChildren()) do
-         if effect.Name:match("Custom") or effect.Name:match("RTX_") then
+         if effect.Name:match("Custom") or effect.Name:match("RTX_") or effect.Name:match("Shader_") then
             effect:Destroy()
          end
       end
@@ -677,8 +877,36 @@ local ResetGraphicsButton = RTXTab:CreateButton({
       Lighting.ColorShift_Top = Color3.fromRGB(0, 0, 0)
       Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
       Lighting.GlobalShadows = true
+      Lighting.ShadowSoftness = 0.2
+      Lighting.Technology = Enum.Technology.Compatibility
+      Lighting.ClockTime = 14
+      Lighting.FogEnd = 100000
       
       settings().Rendering.QualityLevel = "Automatic"
+   end,
+})
+
+local ResetRTXButton = RTXTab:CreateButton({
+   Name = "Quick Reset RTX",
+   Callback = function()
+      local Lighting = game:GetService("Lighting")
+      
+      for _, effect in pairs(Lighting:GetChildren()) do
+         if effect.Name:match("Shader_") then
+            effect:Destroy()
+         end
+      end
+      
+      if getgenv().OriginalLightingShader then
+         Lighting.Ambient = getgenv().OriginalLightingShader.Ambient
+         Lighting.Brightness = getgenv().OriginalLightingShader.Brightness
+         Lighting.ColorShift_Bottom = getgenv().OriginalLightingShader.ColorShift_Bottom
+         Lighting.ColorShift_Top = getgenv().OriginalLightingShader.ColorShift_Top
+         Lighting.OutdoorAmbient = getgenv().OriginalLightingShader.OutdoorAmbient
+         Lighting.ExposureCompensation = getgenv().OriginalLightingShader.ExposureCompensation
+         Lighting.GlobalShadows = getgenv().OriginalLightingShader.GlobalShadows
+         Lighting.ShadowSoftness = getgenv().OriginalLightingShader.ShadowSoftness
+      end
    end,
 })
 
