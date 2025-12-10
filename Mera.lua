@@ -2,14 +2,16 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "Merara Hub",
-   Icon = 1298248131,
-   LoadingTitle = "Loading...",
-   LoadingSubtitle = "Merara!!",
-   Theme = "White",
+   Icon = 0,
+   LoadingTitle = "Merara Hub",
+   LoadingSubtitle = "Loading...",
+   Theme = "Default",
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
    ConfigurationSaving = {
       Enabled = true,
       FolderName = nil,
-      FileName = "GameConfig"
+      FileName = "MeraraHub"
    },
    Discord = {
       Enabled = false,
@@ -27,37 +29,6 @@ local Window = Rayfield:CreateWindow({
       Key = {""}
    }
 })
-
-task.wait(0.5)
-
-local MainColor = Color3.fromRGB(70, 120, 120)
-local BackgroundColor = Color3.fromRGB(35, 55, 55)
-
-local RayfieldUI = nil
-for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
-   if gui:FindFirstChild("Main") and gui:FindFirstChild("Main"):FindFirstChild("Shadow") then
-      RayfieldUI = gui
-      break
-   end
-end
-
-if RayfieldUI then
-   for _, obj in pairs(RayfieldUI:GetDescendants()) do
-      if obj:IsA("Frame") and not obj.Name:match("Shadow") then
-         obj.BackgroundColor3 = MainColor
-      end
-      if obj:IsA("TextButton") then
-         obj.BackgroundColor3 = MainColor
-         obj.BorderColor3 = MainColor
-      end
-      if obj:IsA("ImageButton") then
-         obj.ImageColor3 = MainColor
-      end
-      if obj:IsA("ScrollingFrame") then
-         obj.BackgroundColor3 = BackgroundColor
-      end
-   end
-end
 
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local PlayerSection = PlayerTab:CreateSection("Player Settings")
