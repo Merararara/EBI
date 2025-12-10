@@ -2,10 +2,10 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "Merara Hub",
-   Icon = 1298248131,
+   Icon = 0,
    LoadingTitle = "Merara Hub",
    LoadingSubtitle = "Loading...",
-   Theme = "Amethyst",
+   Theme = "DarkBlue",
    DisableRayfieldPrompts = false,
    DisableBuildWarnings = false,
    ConfigurationSaving = {
@@ -80,16 +80,11 @@ local InfiniteJumpToggle = PlayerTab:CreateToggle({
    Callback = function(Value)
       getgenv().InfiniteJump = Value
       if Value then
-         if not getgenv().JumpConnection then
-            getgenv().JumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
-               if getgenv().InfiniteJump then
-                  local h = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid')
-                  if h then
-                     h:ChangeState("Jumping")
-                  end
-               end
-            end)
-         end
+         game:GetService("UserInputService").JumpRequest:connect(function()
+            if getgenv().InfiniteJump then
+               game.Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid'):ChangeState("Jumping")
+            end
+         end)
       end
    end,
 })
@@ -100,20 +95,15 @@ local NoClipToggle = PlayerTab:CreateToggle({
    Flag = "NoClip",
    Callback = function(Value)
       getgenv().NoClip = Value
-      if not getgenv().NoClipConnection then
-         getgenv().NoClipConnection = game:GetService('RunService').Stepped:Connect(function()
-            if getgenv().NoClip then
-               local char = game.Players.LocalPlayer.Character
-               if char then
-                  for _, v in pairs(char:GetDescendants()) do
-                     if v:IsA("BasePart") then
-                        v.CanCollide = false
-                     end
-                  end
+      game:GetService('RunService').Stepped:connect(function()
+         if getgenv().NoClip then
+            for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+               if v:IsA("BasePart") then
+                  v.CanCollide = false
                end
             end
-         end)
-      end
+         end
+      end)
    end,
 })
 
@@ -135,27 +125,20 @@ local NoClipCamToggle = PlayerTab:CreateToggle({
             end
          end
          
-         if not getgenv().NoClipCamConnection then
-            getgenv().NoClipCamConnection = game:GetService("RunService").RenderStepped:Connect(function()
-               if getgenv().NoClipCam then
-                  for _, part in pairs(game.Workspace:GetDescendants()) do
-                     if part:IsA("BasePart") then
-                        part.LocalTransparencyModifier = 0.5
-                     end
+         game:GetService("RunService").RenderStepped:Connect(function()
+            if getgenv().NoClipCam then
+               for _, part in pairs(game.Workspace:GetDescendants()) do
+                  if part:IsA("BasePart") then
+                     part.LocalTransparencyModifier = 0.5
                   end
                end
-            end)
-         end
+            end
+         end)
          
          Camera.CameraType = Enum.CameraType.Custom
       else
          if getgenv().OriginalCameraMode then
             Camera.CameraType = getgenv().OriginalCameraMode
-         end
-         
-         if getgenv().NoClipCamConnection then
-            getgenv().NoClipCamConnection:Disconnect()
-            getgenv().NoClipCamConnection = nil
          end
          
          for _, part in pairs(game.Workspace:GetDescendants()) do
@@ -186,7 +169,7 @@ end
 local PlayerDropdown = TpTab:CreateDropdown({
    Name = "Select Player",
    Options = getPlayerList(),
-   CurrentOption = {getPlayerList()[1]},
+   CurrentOption = getPlayerList(),
    MultipleOptions = false,
    Flag = "PlayerDropdown",
    Callback = function(Option)
@@ -1177,143 +1160,125 @@ local PortalButton = FETab:CreateButton({
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 local MiscSection = MiscTab:CreateSection("Other Settings")
 
-local CustomTheme = {
-    Background = Color3.fromRGB(39, 30, 42),
-    TabBackground = Color3.fromRGB(47, 36, 52),
-    Topbar = Color3.fromRGB(32, 24, 35),
-    Border = Color3.fromRGB(68, 55, 80),
-    Text = Color3.fromRGB(255, 255, 255),
-    Accent = Color3.fromRGB(255, 152, 104),
-    Button = Color3.fromRGB(51, 37, 56),
-    ButtonText = Color3.fromRGB(255, 255, 255)
-}
-
-local themeOptions = {
-   "Default","Amber","Amethyst","Bloom","DarkBlue","Green","Light","Ocean","Oceanic","Custom"
-}
-
 local ThemeDropdown = MiscTab:CreateDropdown({
    Name = "UI Theme",
-   Options = themeOptions,
-   CurrentOption = {"Custom"},
+   Options = {"Default", "Amber", "Amethyst", "Bloom", "DarkBlue", "Green", "Light", "Ocean", "Oceanic"},
+   CurrentOption = {"Default"},
    MultipleOptions = false,
    Flag = "ThemeDropdown",
    Callback = function(Option)
-      local choice = Option and Option[1] or nil
-      if not choice then return end
-      if choice == "Custom" then
-         Rayfield:SetTheme(CustomTheme)
-      else
-         pcall(function()
-            Rayfield:SetTheme(choice)
-         end)
-      end
+      Rayfield:SetTheme(Option[1])
    end,
 })
 
-local AccentPicker = MiscTab:CreateColorPicker({
+local ColorPicker = MiscTab:CreateColorPicker({
    Name = "Accent Color",
-   Color = CustomTheme.Accent,
-   Flag = "AccentColorPicker",
+   Color = Color3.fromRGB(255, 255, 255),
+   Flag = "ColorPicker",
    Callback = function(Value)
-      if not Value then return end
-      CustomTheme.Accent = Value
-      local ok, current = pcall(function() return ThemeDropdown:Get()[1] end)
-      if ok and current == "Custom" then
-         Rayfield:SetTheme(CustomTheme)
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.BackgroundColor3 ~= Color3.fromRGB(30, 30, 30) then
+               obj.BackgroundColor3 = Value
+            end
+         end
       end
-   end,
+   end
 })
 
 local ColorSection = MiscTab:CreateSection("Quick Colors")
 
-local function applyQuickAccent(color)
-   CustomTheme.Accent = color
-   local ok, current = pcall(function() return ThemeDropdown:Get()[1] end)
-   if ok and current == "Custom" then
-      Rayfield:SetTheme(CustomTheme)
-   else
-      Rayfield:SetTheme("Default")
-      Rayfield:SetTheme(CustomTheme)
-   end
-end
-
 local PurpleButton = MiscTab:CreateButton({
    Name = "Purple Theme",
    Callback = function()
-      applyQuickAccent(Color3.fromRGB(128, 0, 128))
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+            end
+         end
+      end
    end,
 })
 
 local WhiteButton = MiscTab:CreateButton({
    Name = "White Theme",
    Callback = function()
-      CustomTheme.Background = Color3.fromRGB(255,255,255)
-      CustomTheme.TabBackground = Color3.fromRGB(240,240,240)
-      CustomTheme.Text = Color3.fromRGB(0,0,0)
-      CustomTheme.Button = Color3.fromRGB(230,230,230)
-      CustomTheme.ButtonText = Color3.fromRGB(0,0,0)
-      applyQuickAccent(Color3.fromRGB(255,255,255))
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            end
+         end
+         if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            obj.TextColor3 = Color3.fromRGB(0, 0, 0)
+         end
+      end
    end,
 })
 
 local BlackButton = MiscTab:CreateButton({
    Name = "Black Theme",
    Callback = function()
-      CustomTheme.Background = Color3.fromRGB(0,0,0)
-      CustomTheme.TabBackground = Color3.fromRGB(20,20,20)
-      CustomTheme.Text = Color3.fromRGB(255,255,255)
-      CustomTheme.Button = Color3.fromRGB(30,30,30)
-      CustomTheme.ButtonText = Color3.fromRGB(255,255,255)
-      applyQuickAccent(Color3.fromRGB(0,0,0))
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            end
+         end
+      end
    end,
 })
 
 local GrayButton = MiscTab:CreateButton({
    Name = "Gray Theme",
    Callback = function()
-      CustomTheme.Background = Color3.fromRGB(128,128,128)
-      CustomTheme.TabBackground = Color3.fromRGB(110,110,110)
-      CustomTheme.Text = Color3.fromRGB(255,255,255)
-      CustomTheme.Button = Color3.fromRGB(120,120,120)
-      CustomTheme.ButtonText = Color3.fromRGB(255,255,255)
-      applyQuickAccent(Color3.fromRGB(128,128,128))
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(128, 128, 128)
+            end
+         end
+      end
    end,
 })
 
 local SkyBlueButton = MiscTab:CreateButton({
    Name = "Sky Blue Theme",
    Callback = function()
-      CustomTheme.Background = Color3.fromRGB(135,206,235)
-      CustomTheme.TabBackground = Color3.fromRGB(160,220,245)
-      CustomTheme.Text = Color3.fromRGB(0,0,0)
-      CustomTheme.Button = Color3.fromRGB(200,230,250)
-      CustomTheme.ButtonText = Color3.fromRGB(0,0,0)
-      applyQuickAccent(Color3.fromRGB(135,206,235))
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(135, 206, 235)
+            end
+         end
+      end
    end,
 })
 
 local PinkButton = MiscTab:CreateButton({
    Name = "Pink Theme",
    Callback = function()
-      CustomTheme.Background = Color3.fromRGB(255,192,203)
-      CustomTheme.TabBackground = Color3.fromRGB(255,210,220)
-      CustomTheme.Text = Color3.fromRGB(0,0,0)
-      CustomTheme.Button = Color3.fromRGB(255,200,210)
-      CustomTheme.ButtonText = Color3.fromRGB(0,0,0)
-      applyQuickAccent(Color3.fromRGB(255,192,203))
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(255, 192, 203)
+            end
+         end
+      end
    end,
 })
 
 local BrownButton = MiscTab:CreateButton({
    Name = "Brown Theme",
    Callback = function()
-      CustomTheme.Background = Color3.fromRGB(139,69,19)
-      CustomTheme.TabBackground = Color3.fromRGB(160,90,40)
-      CustomTheme.Text = Color3.fromRGB(255,255,255)
-      CustomTheme.Button = Color3.fromRGB(120,60,20)
-      CustomTheme.ButtonText = Color3.fromRGB(255,255,255)
-      applyQuickAccent(Color3.fromRGB(139,69,19))
+      for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
+         if obj:IsA("Frame") or obj:IsA("TextButton") then
+            if obj.Name:find("Main") or obj.Name:find("Button") then
+               obj.BackgroundColor3 = Color3.fromRGB(139, 69, 19)
+            end
+         end
+      end
    end,
 })
 
